@@ -11,16 +11,20 @@ TIC_TIMEOUT = 0.1
 
 
 def draw(canvas):
-    with open("animations/rocket_frame_1.txt", "r") as my_file:
+    with open("animations/rocket/rocket_frame_1.txt", "r") as my_file:
         rocket_frame_1 = my_file.read()
 
-    with open("animations/rocket_frame_2.txt", "r") as my_file:
+    with open("animations/rocket/rocket_frame_2.txt", "r") as my_file:
         rocket_frame_2 = my_file.read()
+
+    with open('animations/trash/trash_large.txt', "r") as garbage_file:
+      trash_frame = garbage_file.read()
 
     pading = 2
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
+    trash = fly_garbage(canvas, column=10, garbage_frame=trash_frame)
     rocket = animate_spaceship(
         canvas,
         start_row=canvas.getmaxyx()[0] / 3,
@@ -35,11 +39,20 @@ def draw(canvas):
             randint(1, canvas.getmaxyx()[0] - pading),
             randint(1, canvas.getmaxyx()[1] - pading),
             choice('★⚝✷*.○+●°•☆:☼❃')
-        ) for num in range(100)]
+        ) for num in range(50)]
 
     while True:
         for num in range(len(coroutines)):
             coroutines[randint(0, len(coroutines)) - 1].send(None)
+
+        try:
+          trash.send(None)
+          canvas.border()
+        except StopIteration:
+          trash.close()
+          canvas.border()
+        except RuntimeError:
+          trash.close()
 
         rocket.send(None)
         canvas.refresh()
@@ -144,6 +157,22 @@ async def fire(canvas,
         canvas.addstr(round(row), round(column), ' ')
         row += rows_speed
         column += columns_speed
+
+
+async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
+    """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
+    rows_number, columns_number = canvas.getmaxyx()
+
+    column = max(column, 0)
+    column = min(column, columns_number - 1)
+
+    row = 0
+
+    while row < rows_number:
+        draw_frame(canvas, row, column, garbage_frame)
+        await asyncio.sleep(0)
+        draw_frame(canvas, row, column, garbage_frame, negative=True)
+        row += speed
 
 
 if __name__ == '__main__':

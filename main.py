@@ -1,3 +1,4 @@
+import os
 import time
 import curses
 import asyncio
@@ -17,14 +18,20 @@ def draw(canvas):
     with open("animations/rocket/rocket_frame_2.txt", "r") as my_file:
         rocket_frame_2 = my_file.read()
 
-    with open('animations/trash/trash_large.txt', "r") as garbage_file:
-      trash_frame = garbage_file.read()
+    garbage_frames_path = os.listdir("animations/garbage")
+
+    garbage_frames = []
+
+    for garbage_frame_path in garbage_frames_path:
+        with open(f'animations/garbage/{garbage_frame_path}', "r") as garbage_file:
+            garbage_frames.append(garbage_file.read())
+
 
     pading = 2
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
-    trash = fly_garbage(canvas, column=10, garbage_frame=trash_frame)
+
     rocket = animate_spaceship(
         canvas,
         start_row=canvas.getmaxyx()[0] / 3,
@@ -44,15 +51,6 @@ def draw(canvas):
     while True:
         for num in range(len(coroutines)):
             coroutines[randint(0, len(coroutines)) - 1].send(None)
-
-        try:
-          trash.send(None)
-          canvas.border()
-        except StopIteration:
-          trash.close()
-          canvas.border()
-        except RuntimeError:
-          trash.close()
 
         rocket.send(None)
         canvas.refresh()

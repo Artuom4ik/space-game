@@ -33,7 +33,7 @@ def draw(canvas):
     curses.curs_set(False)
     canvas.nodelay(True)
     iter_count = 0
-
+    fire_coroutines = []
     rocket = animate_spaceship(
         canvas,
         start_row=canvas.getmaxyx()[0] / 3,
@@ -41,11 +41,11 @@ def draw(canvas):
         frames=[
             rocket_frame_1, rocket_frame_1,
             rocket_frame_2, rocket_frame_2
-        ])
+        ],
+        fire_coroutines=fire_coroutines)
     
     
     fill_orbit_coroutines = []
-
 
     coroutines = [
         blink(
@@ -79,6 +79,16 @@ def draw(canvas):
         for num in range(len(coroutines)):
             coroutines[randint(0, len(coroutines)) - 1].send(None)
 
+        for fire_coroutine in fire_coroutines:
+            try:
+                fire_coroutine.send(None)
+            except StopIteration:
+                canvas.border()
+                fire_coroutine.close()
+            except RuntimeError:
+                canvas.border()
+                fire_coroutine.close()
+                fire_coroutines.remove(fire_coroutine)
 
         rocket.send(None)
         canvas.refresh()
@@ -108,12 +118,55 @@ async def blink(canvas, row, column, symbol='*'):
         await sleep(3)
 
 
-async def animate_spaceship(canvas, start_row, start_column, frames):
+async def fire(canvas,
+               start_row,
+               start_column,
+               rows_speed=-0.3,
+               columns_speed=0):
+    """Display animation of gun shot, direction and speed can be specified."""
+
+    row, column = start_row, start_column
+
+    canvas.addstr(round(row), round(column), '*')
+    await asyncio.sleep(0)
+
+    canvas.addstr(round(row), round(column), 'O')
+    await asyncio.sleep(0)
+    canvas.addstr(round(row), round(column), ' ')
+
+    row += rows_speed
+    column += columns_speed
+
+    symbol = '-' if columns_speed else '|'
+
+    rows, columns = canvas.getmaxyx()
+    max_row, max_column = rows - 1, columns - 1
+
+    curses.beep()
+
+    while 0 < row < max_row and 0 < column < max_column:
+        canvas.addstr(round(row), round(column), symbol)
+        await asyncio.sleep(0)
+        canvas.addstr(round(row), round(column), ' ')
+        row += rows_speed
+        column += columns_speed
+
+
+async def animate_spaceship(canvas, start_row, start_column, frames, fire_coroutines):
     frame_row, frame_column = get_frame_size(frames[0])
     row_speed = column_speed = 0
     for frame in cycle(frames):
         row, column, space = read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, row, column)
+
+        if space:
+            fire_coroutines.append(
+                fire(
+                    canvas=canvas,
+                    start_row=start_row,
+                    start_column=start_column + 2,
+                )
+            )
 
         if row_speed > 0:
             if (start_row + row_speed + frame_row) >= canvas.getmaxyx()[0]:
@@ -151,40 +204,6 @@ async def animate_spaceship(canvas, start_row, start_column, frames):
         await asyncio.sleep(0)
 
         draw_frame(canvas, start_row, start_column, frame, negative=True)
-
-
-async def fire(canvas,
-               start_row,
-               start_column,
-               rows_speed=-0.3,
-               columns_speed=0):
-    """Display animation of gun shot, direction and speed can be specified."""
-
-    row, column = start_row, start_column
-
-    canvas.addstr(round(row), round(column), '*')
-    await asyncio.sleep(0)
-
-    canvas.addstr(round(row), round(column), 'O')
-    await asyncio.sleep(0)
-    canvas.addstr(round(row), round(column), ' ')
-
-    row += rows_speed
-    column += columns_speed
-
-    symbol = '-' if columns_speed else '|'
-
-    rows, columns = canvas.getmaxyx()
-    max_row, max_column = rows - 1, columns - 1
-
-    curses.beep()
-
-    while 0 < row < max_row and 0 < column < max_column:
-        canvas.addstr(round(row), round(column), symbol)
-        await asyncio.sleep(0)
-        canvas.addstr(round(row), round(column), ' ')
-        row += rows_speed
-        column += columns_speed
 
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):

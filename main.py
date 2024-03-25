@@ -6,6 +6,7 @@ from random import randint, choice
 from itertools import cycle
 
 from curses_tools import draw_frame, read_controls, get_frame_size
+from physics import update_speed
 
 
 TIC_TIMEOUT = 0.1
@@ -109,38 +110,38 @@ async def blink(canvas, row, column, symbol='*'):
 
 async def animate_spaceship(canvas, start_row, start_column, frames):
     frame_row, frame_column = get_frame_size(frames[0])
+    row_speed = column_speed = 0
     for frame in cycle(frames):
         row, column, space = read_controls(canvas)
-        row *= 3
-        column *= 3
+        row_speed, column_speed = update_speed(row_speed, column_speed, row, column)
 
-        if row > 0:
-            if (start_row + row + frame_row) >= canvas.getmaxyx()[0]:
+        if row_speed > 0:
+            if (start_row + row_speed + frame_row) >= canvas.getmaxyx()[0]:
                 start_row = canvas.getmaxyx()[0] - frame_row - 1
 
             else:
-                start_row += row
+                start_row += row_speed
 
-        if row < 0:
-            if (start_row + row) <= 1:
+        if row_speed < 0:
+            if (start_row + row_speed) <= 1:
                 start_row = 1
 
             else:
-                start_row += row
+                start_row += row_speed
 
-        if column > 0:
-            if (start_column + column + frame_column) >= canvas.getmaxyx()[1]:
+        if column_speed > 0:
+            if (start_column + column_speed + frame_column) >= canvas.getmaxyx()[1]:
                 start_column = canvas.getmaxyx()[1] - frame_column - 1
 
             else:
-                start_column += column
+                start_column += column_speed
 
-        if column < 0:
-            if (start_column + column) <= 1:
+        if column_speed < 0:
+            if (start_column + column_speed) <= 1:
                 start_column = 1
 
             else:
-                start_column += column
+                start_column += column_speed
 
         draw_frame(canvas, start_row, start_column, frame)
         await asyncio.sleep(0)

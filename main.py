@@ -55,12 +55,12 @@ def draw(canvas):
         ) for num in range(50)]
 
     while True:
-        if iter_count % 20 == 0:
+        if iter_count % 18 == 0:
             fill_orbit_coroutines.append(
                 fill_orbit_with_garbage(
                     garbage_coroutine=fly_garbage(
                         canvas=canvas,
-                        column=randint(1, canvas.getmaxyx()[1] - 2 * pading),
+                        column=randint(1, canvas.getmaxyx()[1] - 3 * pading),
                         garbage_frame=choice(garbage_frames)
                     ),
                 )
@@ -87,23 +87,24 @@ def draw(canvas):
     time.sleep(1)
 
 
+async def sleep(tics=1):
+    for i in range(tics):
+        await asyncio.sleep(0)
+
+
 async def blink(canvas, row, column, symbol='*'):
     while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        for i in range(20):
-            await asyncio.sleep(0)
+        await sleep(20)
 
         canvas.addstr(row, column, symbol)
-        for i in range(3):
-            await asyncio.sleep(0)
+        await sleep(3)
 
         canvas.addstr(row, column, symbol, curses.A_BOLD)
-        for i in range(5):
-            await asyncio.sleep(0)
+        await sleep(5)
 
         canvas.addstr(row, column, symbol)
-        for i in range(3):
-            await asyncio.sleep(0)
+        await sleep(3)
 
 
 async def animate_spaceship(canvas, start_row, start_column, frames):
@@ -206,7 +207,7 @@ async def fill_orbit_with_garbage(garbage_coroutine):
         garbage_coroutine.send(None)
         await asyncio.sleep(0)
 
-            
+   
 if __name__ == '__main__':
     curses.update_lines_cols()
     curses.wrapper(draw)

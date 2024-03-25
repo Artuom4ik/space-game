@@ -31,6 +31,7 @@ def draw(canvas):
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
+    iter_count = 0
 
     rocket = animate_spaceship(
         canvas,
@@ -40,6 +41,11 @@ def draw(canvas):
             rocket_frame_1, rocket_frame_1,
             rocket_frame_2, rocket_frame_2
         ])
+    
+    
+    fill_orbit_coroutines = []
+
+
     coroutines = [
         blink(
             canvas,
@@ -49,11 +55,33 @@ def draw(canvas):
         ) for num in range(50)]
 
     while True:
+        if iter_count % 20 == 0:
+            fill_orbit_coroutines.append(
+                fill_orbit_with_garbage(
+                    garbage_coroutine=fly_garbage(
+                        canvas=canvas,
+                        column=randint(1, canvas.getmaxyx()[1] - 2 * pading),
+                        garbage_frame=choice(garbage_frames)
+                    ),
+                )
+            )
+        
+        for fill_orbit_coroutine in fill_orbit_coroutines:
+            try:
+                fill_orbit_coroutine.send(None)
+            except StopIteration:
+                fill_orbit_coroutine.close()
+            except RuntimeError:
+                fill_orbit_coroutines.remove(fill_orbit_coroutine)
+                canvas.border()
+
         for num in range(len(coroutines)):
             coroutines[randint(0, len(coroutines)) - 1].send(None)
 
+
         rocket.send(None)
         canvas.refresh()
+        iter_count += 1
         time.sleep(TIC_TIMEOUT)
 
     time.sleep(1)
@@ -173,6 +201,12 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
         row += speed
 
 
+async def fill_orbit_with_garbage(garbage_coroutine):
+    while True:
+        garbage_coroutine.send(None)
+        await asyncio.sleep(0)
+
+            
 if __name__ == '__main__':
     curses.update_lines_cols()
     curses.wrapper(draw)

@@ -8,6 +8,7 @@ from itertools import cycle
 from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
 from obstacles import Obstacle, show_obstacles
+from explosion import explode
 
 
 TIC_TIMEOUT = 0.1
@@ -239,6 +240,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
         if obstacle in collision_obstacles:
             OBSTACLES.remove(obstacle)
+            await explode(canvas, obstacle.row, obstacle.column)
             return
         
         else:

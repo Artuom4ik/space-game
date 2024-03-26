@@ -46,7 +46,7 @@ def draw(canvas):
             rocket_frame_1, rocket_frame_1,
             rocket_frame_2, rocket_frame_2
         ],
-        fire_coroutines=fire_coroutines)
+        fire_coroutines=fire_coroutines,)
     
     obs_coroutines = show_obstacles(canvas, OBSTACLES)
     fill_orbit_coroutines = []
@@ -102,6 +102,22 @@ def draw(canvas):
         time.sleep(TIC_TIMEOUT)
 
     time.sleep(1)
+
+
+async def show_gameover(canvas):
+    with open("animations/game_over.txt", "r") as game_over_file:
+        screensaver = game_over_file.read()
+    row_size, column_size = canvas.getmaxyx()
+    screensaver_row_size, screensaver_column_size = get_frame_size(screensaver)
+    while True:
+        draw_frame(
+            canvas=canvas,
+            start_row=(row_size - screensaver_row_size) // 2,
+            start_column=(column_size - screensaver_column_size) // 2,
+            text=screensaver,
+        )
+
+        await asyncio.sleep(0)
 
 
 async def sleep(tics=1):
@@ -167,10 +183,17 @@ async def fire(canvas,
 async def animate_spaceship(canvas, start_row, start_column, frames, fire_coroutines):
     frame_row, frame_column = get_frame_size(frames[0])
     row_speed = column_speed = 0
+    columns_size, rows_size, = canvas.getmaxyx()
     for frame in cycle(frames):
         row, column, space = read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, row, column)
 
+        for obstacle in OBSTACLES:
+            if obstacle.has_collision(start_row, start_column):
+                await show_gameover(canvas)
+                return
+                
+            
         if space:
             fire_coroutines.append(
                 fire(

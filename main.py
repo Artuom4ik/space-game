@@ -12,6 +12,8 @@ from obstacles import Obstacle, show_obstacles
 
 TIC_TIMEOUT = 0.1
 OBSTACLES = []
+collision_obstacles = []
+
 
 def draw(canvas):
     with open("animations/rocket/rocket_frame_1.txt", "r") as my_file:
@@ -151,9 +153,10 @@ async def fire(canvas,
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
         canvas.addstr(round(row), round(column), ' ')
-        
+
         for obstacle in OBSTACLES:
             if obstacle.has_collision(row, column):
+                collision_obstacles.append(obstacle)
                 return
             
         row += rows_speed
@@ -173,6 +176,7 @@ async def animate_spaceship(canvas, start_row, start_column, frames, fire_corout
                     canvas=canvas,
                     start_row=start_row,
                     start_column=start_column + 2,
+                    rows_speed=-1,
                 )
             )
 
@@ -226,14 +230,20 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     obstacle = Obstacle(row, column, rows_size, columns_size)
 
     OBSTACLES.append(obstacle)
-    obstacle_ind = OBSTACLES.index(obstacle)
 
     while row < rows_number:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
         row += speed
-        OBSTACLES[obstacle_ind].row += speed
+
+        if obstacle in collision_obstacles:
+            OBSTACLES.remove(obstacle)
+            return
+        
+        else:
+            obstacle.row += speed
+
 
 
 async def fill_orbit_with_garbage(garbage_coroutine):

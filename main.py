@@ -7,10 +7,11 @@ from itertools import cycle
 
 from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
+from obstacles import Obstacle, show_obstacles
 
 
 TIC_TIMEOUT = 0.1
-
+OBSTACLES = []
 
 def draw(canvas):
     with open("animations/rocket/rocket_frame_1.txt", "r") as my_file:
@@ -44,7 +45,7 @@ def draw(canvas):
         ],
         fire_coroutines=fire_coroutines)
     
-    
+    obs_coroutines = show_obstacles(canvas, OBSTACLES)
     fill_orbit_coroutines = []
 
     coroutines = [
@@ -70,10 +71,12 @@ def draw(canvas):
         for fill_orbit_coroutine in fill_orbit_coroutines:
             try:
                 fill_orbit_coroutine.send(None)
+                obs_coroutines.send(None)
             except StopIteration:
                 fill_orbit_coroutine.close()
             except RuntimeError:
                 fill_orbit_coroutines.remove(fill_orbit_coroutine)
+            finally:
                 canvas.border()
 
         for num in range(len(coroutines)):
@@ -83,12 +86,12 @@ def draw(canvas):
             try:
                 fire_coroutine.send(None)
             except StopIteration:
-                canvas.border()
                 fire_coroutine.close()
             except RuntimeError:
-                canvas.border()
                 fire_coroutine.close()
                 fire_coroutines.remove(fire_coroutine)
+            finally:
+                canvas.border()
 
         rocket.send(None)
         canvas.refresh()
@@ -212,14 +215,20 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
     column = max(column, 0)
     column = min(column, columns_number - 1)
-
+    rows_size, columns_size = get_frame_size(garbage_frame)
     row = 0
+
+    obstacle = Obstacle(row, column, rows_size, columns_size)
+
+    OBSTACLES.append(obstacle)
+    obstacle_ind = OBSTACLES.index(obstacle)
 
     while row < rows_number:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
         row += speed
+        OBSTACLES[obstacle_ind].row += speed
 
 
 async def fill_orbit_with_garbage(garbage_coroutine):

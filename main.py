@@ -28,60 +28,42 @@ def draw(canvas):
     garbage_frames = []
 
     for garbage_frame_path in garbage_frames_path:
-        with open(f'animations/garbage/{garbage_frame_path}', "r") as garbage_file:
+        with open(
+            f'animations/garbage/{garbage_frame_path}', "r"
+        ) as garbage_file:
             garbage_frames.append(garbage_file.read())
-
 
     pading = 2
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
     iter_count = 0
+    window_width, window_height = canvas.getmaxyx()
     fire_coroutines = []
     rocket = animate_spaceship(
         canvas,
-        start_row=canvas.getmaxyx()[0] / 3,
-        start_column=canvas.getmaxyx()[1] / 3,
+        start_row=window_width / 3,
+        start_column=window_height / 3,
         frames=[
             rocket_frame_1, rocket_frame_1,
             rocket_frame_2, rocket_frame_2
         ],
         fire_coroutines=fire_coroutines,)
-    
-    obs_coroutines = show_obstacles(canvas, OBSTACLES)
-    fill_orbit_coroutines = []
+
+    # fly_garbage_coroutines = []
+
+    # obs_coroutines = show_obstacles(canvas, OBSTACLES)
+    # fill_orbit_coroutines = []
 
     coroutines = [
         blink(
             canvas,
-            randint(1, canvas.getmaxyx()[0] - pading),
-            randint(1, canvas.getmaxyx()[1] - pading),
+            randint(1, window_width - pading),
+            randint(1, window_height - pading),
             choice('★⚝✷*.○+●°•☆:☼❃')
         ) for num in range(50)]
 
     while True:
-        if iter_count % 18 == 0:
-            fill_orbit_coroutines.append(
-                fill_orbit_with_garbage(
-                    garbage_coroutine=fly_garbage(
-                        canvas=canvas,
-                        column=randint(1, canvas.getmaxyx()[1] - 3 * pading),
-                        garbage_frame=choice(garbage_frames)
-                    ),
-                )
-            )
-        
-        for fill_orbit_coroutine in fill_orbit_coroutines:
-            try:
-                fill_orbit_coroutine.send(None)
-                obs_coroutines.send(None)
-            except StopIteration:
-                fill_orbit_coroutine.close()
-            except RuntimeError:
-                fill_orbit_coroutines.remove(fill_orbit_coroutine)
-            finally:
-                canvas.border()
-
         for num in range(len(coroutines)):
             coroutines[randint(0, len(coroutines)) - 1].send(None)
 
@@ -107,13 +89,15 @@ def draw(canvas):
 async def show_gameover(canvas):
     with open("animations/game_over.txt", "r") as game_over_file:
         screensaver = game_over_file.read()
-    row_size, column_size = canvas.getmaxyx()
-    screensaver_row_size, screensaver_column_size = get_frame_size(screensaver)
+    window_width, window_height = canvas.getmaxyx()
+    screensaver_window_width, screensaver_window_height = get_frame_size(
+        screensaver
+    )
     while True:
         draw_frame(
             canvas=canvas,
-            start_row=(row_size - screensaver_row_size) // 2,
-            start_column=(column_size - screensaver_column_size) // 2,
+            start_row=(window_width - screensaver_window_width) // 2,
+            start_column=(window_height - screensaver_window_height) // 2,
             text=screensaver,
         )
 
@@ -175,25 +159,35 @@ async def fire(canvas,
             if obstacle.has_collision(row, column):
                 collision_obstacles.append(obstacle)
                 return
-            
+
         row += rows_speed
         column += columns_speed
 
 
-async def animate_spaceship(canvas, start_row, start_column, frames, fire_coroutines):
+async def animate_spaceship(
+        canvas,
+        start_row,
+        start_column,
+        frames,
+        fire_coroutines):
+
     frame_row, frame_column = get_frame_size(frames[0])
     row_speed = column_speed = 0
-    columns_size, rows_size, = canvas.getmaxyx()
+    window_width, window_height, = canvas.getmaxyx()
     for frame in cycle(frames):
         row, column, space = read_controls(canvas)
-        row_speed, column_speed = update_speed(row_speed, column_speed, row, column)
+        row_speed, column_speed = update_speed(
+            row_speed,
+            column_speed,
+            row,
+            column
+        )
 
         for obstacle in OBSTACLES:
             if obstacle.has_collision(start_row, start_column):
                 await show_gameover(canvas)
                 return
-                
-            
+
         if space:
             fire_coroutines.append(
                 fire(
@@ -205,8 +199,8 @@ async def animate_spaceship(canvas, start_row, start_column, frames, fire_corout
             )
 
         if row_speed > 0:
-            if (start_row + row_speed + frame_row) >= canvas.getmaxyx()[0]:
-                start_row = canvas.getmaxyx()[0] - frame_row - 1
+            if (start_row + row_speed + frame_row) >= window_width:
+                start_row = window_width - frame_row - 1
 
             else:
                 start_row += row_speed
@@ -219,8 +213,8 @@ async def animate_spaceship(canvas, start_row, start_column, frames, fire_corout
                 start_row += row_speed
 
         if column_speed > 0:
-            if (start_column + column_speed + frame_column) >= canvas.getmaxyx()[1]:
-                start_column = canvas.getmaxyx()[1] - frame_column - 1
+            if (start_column + column_speed + frame_column) >= window_height:
+                start_column = window_height - frame_column - 1
 
             else:
                 start_column += column_speed
@@ -244,10 +238,10 @@ async def animate_spaceship(canvas, start_row, start_column, frames, fire_corout
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
-    rows_number, columns_number = canvas.getmaxyx()
+    window_width, window_height = canvas.getmaxyx()
 
     column = max(column, 0)
-    column = min(column, columns_number - 1)
+    column = min(column, window_height - 1)
     rows_size, columns_size = get_frame_size(garbage_frame)
     row = 0
 
@@ -255,7 +249,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
     OBSTACLES.append(obstacle)
 
-    while row < rows_number:
+    while row < window_width:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
@@ -265,18 +259,16 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
             OBSTACLES.remove(obstacle)
             await explode(canvas, obstacle.row, obstacle.column)
             return
-        
+
         else:
             obstacle.row += speed
 
 
-
-async def fill_orbit_with_garbage(garbage_coroutine):
+async def fill_orbit_with_garbage(canvas, fly_garbage_coroutines):
     while True:
-        garbage_coroutine.send(None)
-        await asyncio.sleep(0)
+        await sleep()
 
-   
+
 if __name__ == '__main__':
     curses.update_lines_cols()
     curses.wrapper(draw)

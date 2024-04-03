@@ -15,7 +15,7 @@ from game_scenario import PHRASES, get_garbage_delay_tics
 TIC_TIMEOUT = 0.1
 obstacles_coroutines = []
 collision_obstacles = []
-year = 1957
+year = 1956
 phrase = ""
 
 
@@ -82,7 +82,7 @@ def draw(canvas):
     )
 
     coroutines.append(update_year())
-    coroutines.append(show_year(canvas, year_box=year_box))
+    coroutines.append(show_year(year_box=year_box))
 
     while True:
         if get_garbage_delay_tics(year):
@@ -112,8 +112,8 @@ def draw(canvas):
             finally:
                 canvas.border()
 
-        canvas.refresh()
         iter_count += 1
+        canvas.refresh()
         time.sleep(TIC_TIMEOUT)
 
     time.sleep(1)
@@ -127,7 +127,7 @@ async def update_year():
         await sleep(15)
 
 
-async def show_year(canvas, year_box):
+async def show_year(year_box):
     global phrase
 
     while True:
@@ -218,8 +218,8 @@ async def fire(canvas,
 
     symbol = '-' if columns_speed else '|'
 
-    rows, columns = canvas.getmaxyx()
-    max_row, max_column = rows - 1, columns - 1
+    window_width, window_height = canvas.getmaxyx()
+    max_row, max_column = window_width - 1, window_height - 1
 
     curses.beep()
 
@@ -249,7 +249,6 @@ async def animate_spaceship(
     window_width, window_height, = canvas.getmaxyx()
 
     for frame in cycle(frames):
-
         if year >= 2077:
             await show_win(canvas)
             return
@@ -264,7 +263,6 @@ async def animate_spaceship(
 
         for obstacle in obstacles_coroutines:
             if obstacle.has_collision(start_row, start_column):
-
                 await show_gameover(canvas)
                 return
 

@@ -60,6 +60,8 @@ def draw(canvas):
             choice('★⚝✷*.○+●°•☆:☼❃')
         ) for num in range(50)]
 
+    coroutines += blink_coroutines
+
     coroutines.append(
         fill_orbit_with_garbage(
             canvas=canvas,
@@ -95,9 +97,6 @@ def draw(canvas):
                         speed=1.0,
                     )
                 )
-
-        for num in range(len(blink_coroutines)):
-            blink_coroutines[randint(0, len(blink_coroutines)) - 1].send(None)
 
         for coroutine in coroutines:
             try:
@@ -278,7 +277,7 @@ async def animate_spaceship(
 
         if row_speed > 0:
             if (start_row + row_speed + frame_row) >= window_width:
-                start_row = window_width - frame_row - 1
+                start_row = window_width - frame_row
 
             else:
                 start_row += row_speed
@@ -292,7 +291,7 @@ async def animate_spaceship(
 
         if column_speed > 0:
             if (start_column + column_speed + frame_column) >= window_height:
-                start_column = window_height - frame_column - 1
+                start_column = window_height - frame_column
 
             else:
                 start_column += column_speed

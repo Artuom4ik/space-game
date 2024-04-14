@@ -349,10 +349,11 @@ async def animate_spaceship(
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
     window_height, window_width = canvas.getmaxyx()
+    pading = 1
 
     column = max(column, 0)
     rows_size, columns_size = get_frame_size(garbage_frame)
-    column = min(column, window_width - columns_size)
+    column = min(column, window_width - columns_size - pading)
     row = 0
 
     obstacle = Obstacle(row, column, rows_size, columns_size)

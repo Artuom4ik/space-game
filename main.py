@@ -19,6 +19,17 @@ year = 1956
 phrase = ""
 
 
+def enters_the_window(canvas, row, column, frame):
+    window_height, window_width = canvas.getmaxyx()
+    frame_height, frame_width = get_frame_size(frame)
+
+    if row + frame_height < window_height and \
+            column + frame_width < window_width:
+        return True
+
+    return False
+
+
 def draw(canvas):
     with open("animations/rocket/rocket_frame_1.txt", "r") as my_file:
         rocket_frame_1 = my_file.read()
@@ -38,27 +49,34 @@ def draw(canvas):
 
     pading = 2
     iter_count = 1
+    stars_count = 50
 
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
-    window_width, window_height = canvas.getmaxyx()
+    window_height, window_width = canvas.getmaxyx()
+
+    year_box_height = 2
+    year_box_width = 60
+    year_box_row = round(window_height * 0.8)
+    year_box_column = window_width // 2
+
     year_box = canvas.derwin(
-        2,
-        60,
-        window_height // 5,
-        window_width * 2
+        year_box_height,
+        year_box_width,
+        year_box_row,
+        year_box_column
     )
     coroutines = []
     garbage_coroutines = []
 
     blink_coroutines = [
         blink(
-            canvas,
-            randint(1, window_width - pading),
-            randint(1, window_height - pading),
-            choice('★⚝✷*.○+●°•☆:☼❃')
-        ) for num in range(50)]
+            canvas=canvas,
+            row=randint(1, window_height - pading),
+            column=randint(1, window_width - pading),
+            symbol=choice('★⚝✷*.○+●°•☆:☼❃')
+        ) for num in range(stars_count)]
 
     coroutines += blink_coroutines
 
@@ -73,8 +91,8 @@ def draw(canvas):
     coroutines.append(
         animate_spaceship(
             canvas,
-            start_row=window_width / 3,
-            start_column=window_height / 3,
+            start_row=window_height / 3,
+            start_column=window_width / 3,
             frames=[
                 rocket_frame_1, rocket_frame_1,
                 rocket_frame_2, rocket_frame_2
@@ -92,7 +110,7 @@ def draw(canvas):
                 garbage_coroutines.append(
                     fly_garbage(
                         canvas=canvas,
-                        column=randint(1, window_height),
+                        column=randint(1, window_width),
                         garbage_frame=choice(garbage_frames),
                         speed=1.0,
                     )
@@ -128,13 +146,15 @@ async def update_year():
 
 async def show_year(year_box):
     global phrase
+    row = 1
+    column = 1
 
     while True:
         if year in PHRASES:
             phrase = PHRASES[year]
-            year_box.addstr(1, 1, "Year: " + str(year) + " " + phrase)
+            year_box.addstr(row, column, "Year: " + str(year) + " " + phrase)
         else:
-            year_box.addstr(1, 1, "Year: " + str(year) + " " + phrase)
+            year_box.addstr(row, column, "Year: " + str(year) + " " + phrase)
         await asyncio.sleep(0)
 
 
@@ -142,17 +162,27 @@ async def show_win(canvas):
     with open("animations/win.txt", "r") as win_file:
         screensaver = win_file.read()
 
-    window_width, window_height = canvas.getmaxyx()
-    screensaver_window_width, screensaver_window_height = get_frame_size(
+    window_height, window_width = canvas.getmaxyx()
+    screensaver_window_height, screensaver_window_width = get_frame_size(
         screensaver
     )
+    start_column = (window_width - screensaver_window_width) // 2
+    start_row = (window_height - screensaver_window_height) // 2
+
     while True:
-        draw_frame(
+        if enters_the_window(
             canvas=canvas,
-            start_row=(window_width - screensaver_window_width) // 2,
-            start_column=(window_height - screensaver_window_height) // 2,
-            text=screensaver,
-        )
+            row=start_row,
+            column=start_column,
+            frame=screensaver
+        ):
+
+            draw_frame(
+                canvas=canvas,
+                start_row=start_row,
+                start_column=start_column,
+                text=screensaver,
+            )
 
         await asyncio.sleep(0)
 
@@ -161,17 +191,27 @@ async def show_gameover(canvas):
     with open("animations/game_over.txt", "r") as game_over_file:
         screensaver = game_over_file.read()
 
-    window_width, window_height = canvas.getmaxyx()
-    screensaver_window_width, screensaver_window_height = get_frame_size(
+    window_height, window_width = canvas.getmaxyx()
+    screensaver_window_height, screensaver_window_width = get_frame_size(
         screensaver
     )
+    start_column = (window_width - screensaver_window_width) // 2
+    start_row = (window_height - screensaver_window_height) // 2
+
     while True:
-        draw_frame(
+        if enters_the_window(
             canvas=canvas,
-            start_row=(window_width - screensaver_window_width) // 2,
-            start_column=(window_height - screensaver_window_height) // 2,
-            text=screensaver,
-        )
+            row=start_row,
+            column=start_column,
+            frame=screensaver
+        ):
+
+            draw_frame(
+                canvas=canvas,
+                start_row=start_row,
+                start_column=start_column,
+                text=screensaver,
+            )
 
         await asyncio.sleep(0)
 
@@ -217,8 +257,8 @@ async def fire(canvas,
 
     symbol = '-' if columns_speed else '|'
 
-    window_width, window_height = canvas.getmaxyx()
-    max_row, max_column = window_width - 1, window_height - 1
+    window_height, window_width = canvas.getmaxyx()
+    max_row, max_column = window_height - 1, window_width - 1
 
     curses.beep()
 
@@ -245,7 +285,8 @@ async def animate_spaceship(
 
     frame_row, frame_column = get_frame_size(frames[0])
     row_speed = column_speed = 0
-    window_width, window_height, = canvas.getmaxyx()
+    window_height, window_width, = canvas.getmaxyx()
+    height_pading, width_pading = 1, 1
 
     for frame in cycle(frames):
         if year >= 2077:
@@ -275,33 +316,25 @@ async def animate_spaceship(
                 )
             )
 
-        if row_speed > 0:
-            if (start_row + row_speed + frame_row) >= window_width:
-                start_row = window_width - frame_row
+        if (start_row + row_speed + frame_row) >= window_height \
+                and row_speed > 0:
+            start_row = window_height - frame_row - height_pading
 
-            else:
-                start_row += row_speed
+        elif (start_row + row_speed) <= 1 and row_speed < 0:
+            start_row = 1
 
-        if row_speed < 0:
-            if (start_row + row_speed) <= 1:
-                start_row = 1
+        else:
+            start_row += row_speed
 
-            else:
-                start_row += row_speed
+        if (start_column + column_speed + frame_column) >= window_width \
+                and column_speed > 0:
+            start_column = window_width - frame_column - width_pading
 
-        if column_speed > 0:
-            if (start_column + column_speed + frame_column) >= window_height:
-                start_column = window_height - frame_column
+        elif (start_column + column_speed) <= 1 and column_speed < 0:
+            start_column = 1
 
-            else:
-                start_column += column_speed
-
-        if column_speed < 0:
-            if (start_column + column_speed) <= 1:
-                start_column = 1
-
-            else:
-                start_column += column_speed
+        else:
+            start_column += column_speed
 
         draw_frame(canvas, start_row, start_column, frame)
         await asyncio.sleep(0)
@@ -315,18 +348,18 @@ async def animate_spaceship(
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
-    window_width, window_height = canvas.getmaxyx()
+    window_height, window_width = canvas.getmaxyx()
 
     column = max(column, 0)
-    column = min(column, window_height - 1)
     rows_size, columns_size = get_frame_size(garbage_frame)
+    column = min(column, window_width - columns_size)
     row = 0
 
     obstacle = Obstacle(row, column, rows_size, columns_size)
 
     obstacles_coroutines.append(obstacle)
 
-    while row < window_width:
+    while row < window_height:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)

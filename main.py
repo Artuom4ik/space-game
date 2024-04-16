@@ -153,7 +153,11 @@ async def show_year(year_box):
 
     while True:
         if year in PHRASES:
-            year_box.addstr(row, column, "Year: " + str(year) + " " + PHRASES[year])
+            year_box.addstr(
+                row,
+                column,
+                "Year: " + str(year) + " " + PHRASES[year]
+            )
         else:
             year_box.addstr(row, column, "Year: " + str(year))
         await asyncio.sleep(0)
@@ -350,7 +354,8 @@ async def animate_spaceship(
 
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
-    """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
+    """Animate garbage, flying from top to bottom.
+    Сolumn position will stay same, as specified on start."""
     window_height, window_width = canvas.getmaxyx()
     pading = 1
 

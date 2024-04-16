@@ -45,7 +45,8 @@ def update_speed(
         column_speed_limit=2,
         fading=0.8):
 
-    """Update speed smootly to make control handy for player. Return new speed value (row_speed, column_speed)
+    """Update speed smootly to make control handy for player.
+    Return new speed value (row_speed, column_speed)
 
     rows_direction — is a force direction by rows axis. Possible values:
        -1 — if force pulls up
@@ -58,13 +59,19 @@ def update_speed(
     """
 
     if rows_direction not in (-1, 0, 1):
-        raise ValueError(f'Wrong rows_direction value {rows_direction}. Expects -1, 0 or 1.')
+        raise ValueError(
+            f'Wrong rows_direction value {rows_direction}. Expects -1, 0 or 1.'
+        )
 
     if columns_direction not in (-1, 0, 1):
-        raise ValueError(f'Wrong columns_direction value {columns_direction}. Expects -1, 0 or 1.')
+        raise ValueError(
+            f'Wrong columns_direction value {columns_direction}. Expects -1, 0 or 1.'
+        )
 
     if fading < 0 or fading > 1:
-        raise ValueError(f'Wrong columns_direction value {fading}. Expects float between 0 and 1.')
+        raise ValueError(
+            f'Wrong columns_direction value {fading}. Expects float between 0 and 1.'
+        )
 
     # гасим скорость, чтобы корабль останавливался со временем
     row_speed *= fading

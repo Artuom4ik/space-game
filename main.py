@@ -30,19 +30,23 @@ def enters_the_window(canvas, row, column, frame):
 
 
 def draw(canvas):
-    with open("animations/rocket/rocket_frame_1.txt", "r") as my_file:
+    with open(
+        os.path.join("animations", "rocket", "rocket_frame_1.txt"), "r"
+    ) as my_file:
         rocket_frame_1 = my_file.read()
 
-    with open("animations/rocket/rocket_frame_2.txt", "r") as my_file:
+    with open(
+        os.path.join("animations", "rocket", "rocket_frame_2.txt"), "r"
+    ) as my_file:
         rocket_frame_2 = my_file.read()
 
-    garbage_frames_path = os.listdir("animations/garbage")
+    garbage_frames_path = os.listdir(os.path.join("animations", "garbage"))
 
     garbage_frames = []
 
     for garbage_frame_path in garbage_frames_path:
         with open(
-            f'animations/garbage/{garbage_frame_path}', "r"
+            os.path.join("animations", "garbage", f"{garbage_frame_path}"), "r"
         ) as garbage_file:
             garbage_frames.append(garbage_file.read())
 
@@ -156,7 +160,7 @@ async def show_year(year_box):
 
 
 async def show_win(canvas):
-    with open("animations/win.txt", "r") as win_file:
+    with open(os.path.join("animations", "win.txt"), "r") as win_file:
         screensaver = win_file.read()
 
     window_height, window_width = canvas.getmaxyx()
@@ -185,7 +189,9 @@ async def show_win(canvas):
 
 
 async def show_gameover(canvas):
-    with open("animations/game_over.txt", "r") as game_over_file:
+    with open(
+        os.path.join("animations", "game_over.txt"), "r"
+    ) as game_over_file:
         screensaver = game_over_file.read()
 
     window_height, window_width = canvas.getmaxyx()

@@ -18,7 +18,7 @@ collision_obstacles = []
 year = 1956
 
 
-def enters_the_window(canvas, row, column, frame):
+def check_capacity_of_the_window(canvas, row, column, frame):
     window_height, window_width = canvas.getmaxyx()
     frame_height, frame_width = get_frame_size(frame)
 
@@ -171,7 +171,7 @@ async def show_win(canvas):
     start_row = (window_height - screensaver_window_height) // 2
 
     while True:
-        if enters_the_window(
+        if check_capacity_of_the_window(
             canvas=canvas,
             row=start_row,
             column=start_column,
@@ -202,7 +202,7 @@ async def show_gameover(canvas):
     start_row = (window_height - screensaver_window_height) // 2
 
     while True:
-        if enters_the_window(
+        if check_capacity_of_the_window(
             canvas=canvas,
             row=start_row,
             column=start_column,

@@ -16,7 +16,6 @@ TIC_TIMEOUT = 0.1
 obstacles_coroutines = []
 collision_obstacles = []
 year = 1956
-phrase = ""
 
 
 def enters_the_window(canvas, row, column, frame):
@@ -145,16 +144,14 @@ async def update_year():
 
 
 async def show_year(year_box):
-    global phrase
     row = 1
     column = 1
 
     while True:
         if year in PHRASES:
-            phrase = PHRASES[year]
-            year_box.addstr(row, column, "Year: " + str(year) + " " + phrase)
+            year_box.addstr(row, column, "Year: " + str(year) + " " + PHRASES[year])
         else:
-            year_box.addstr(row, column, "Year: " + str(year) + " " + phrase)
+            year_box.addstr(row, column, "Year: " + str(year))
         await asyncio.sleep(0)
 
 
